@@ -403,6 +403,8 @@ roles:
     release_name: scf-helper
   - name: bbs
     release_name: diego
+  - name: cfdot
+    release_name: diego
   - name: metron_agent
     release_name: loggregator
   processes:
@@ -443,6 +445,9 @@ roles:
   configuration:
     templates:
       properties.diego.bbs.advertisement_base_hostname: ((KUBE_SERVICE_DOMAIN_SUFFIX))
+      properties.tls.ca_certificate: ((INTERNAL_CA_CERT)) # cfdot property
+      properties.tls.certificate: '"((BBS_REP_CERT))"'    # cfdot property
+      properties.tls.private_key: '"((BBS_REP_KEY))"'     # cfdot property
 - name: router
   environment_scripts:
   - scripts/configure-HA-hosts.sh
@@ -956,6 +961,8 @@ roles:
     release_name: scf-helper
   - name: auctioneer
     release_name: diego
+  - name: cfdot
+    release_name: diego
   - name: metron_agent
     release_name: loggregator
   processes:
@@ -985,6 +992,11 @@ roles:
                 values:
                 - diego-brain
             topologyKey: "beta.kubernetes.io/os"
+  configuration:
+    templates:
+      properties.tls.ca_certificate: ((INTERNAL_CA_CERT)) # cfdot property
+      properties.tls.certificate: '"((BBS_REP_CERT))"'    # cfdot property
+      properties.tls.private_key: '"((BBS_REP_KEY))"'     # cfdot property
 - name: cc-uploader
   environment_scripts:
   - scripts/configure-HA-hosts.sh
@@ -1144,6 +1156,8 @@ roles:
     release_name: scf-helper
   - name: rep
     release_name: diego
+  - name: cfdot
+    release_name: diego
   - name: route_emitter
     release_name: diego
   - name: garden
@@ -1222,8 +1236,11 @@ roles:
       properties.containers.trusted_ca_certificates: ((#TRUSTED_CERTS))"((TRUSTED_CERTS))"((/TRUSTED_CERTS))
       properties.diego.rep.advertise_domain: diego-cell-set.((KUBE_SERVICE_DOMAIN_SUFFIX))
       properties.tls.ca_cert: ((INTERNAL_CA_CERT))
+      properties.tls.ca_certificate: ((INTERNAL_CA_CERT)) # cfdot property
       properties.tls.cert: ((REP_SERVER_CERT))
+      properties.tls.certificate: '"((BBS_REP_CERT))"'    # cfdot property
       properties.tls.key: ((REP_SERVER_KEY))
+      properties.tls.private_key: '"((BBS_REP_KEY))"'     # cfdot property
 - name: acceptance-tests-brain
   type: bosh-task
   tags: [stop-on-failure]
@@ -2434,6 +2451,8 @@ configuration:
     properties.diego.bbs.sql.ca_cert: ((INTERNAL_CA_CERT))
     properties.diego.bbs.sql.db_host: mysql-proxy.((KUBE_SERVICE_DOMAIN_SUFFIX))
     properties.diego.bbs.sql.db_password: ((MYSQL_DIEGO_PASSWORD))
+    properties.diego.cfdot.bbs.api_location: diego-api.((KUBE_SERVICE_DOMAIN_SUFFIX)):8889
+    properties.diego.cfdot.locket.api_location: '"diego-locket.((KUBERNETES_NAMESPACE)):8891"'
     properties.diego.executor.disk_capacity_mb: ((DIEGO_CELL_DISK_CAPACITY_MB))
     properties.diego.executor.memory_capacity_mb: ((DIEGO_CELL_MEMORY_CAPACITY_MB))
     properties.diego.file_server.log_level: '"((GO_LOG_LEVEL))((#LOG_LEVEL))((/LOG_LEVEL))"'
