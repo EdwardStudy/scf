@@ -1,0 +1,150 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ops-icd
+  labels:
+    app.kubernetes.io/component: operations
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/name: {{ include "scf.fullname" . }}
+    app.kubernetes.io/version: {{ default .Chart.Version .Chart.AppVersion | quote }}
+    helm.sh/chart: {{ include "scf.chart" . }}
+stringData:
+  ops: |
+    # remove local db variables
+    - type: remove
+      path: /instance_groups/name=database?
+    - type: remove
+      path: /variables/name=cf_mysql_mysql_admin_password?
+    - type: remove
+      path: /variables/name=cf_mysql_mysql_cluster_health_password?
+    - type: remove
+      path: /variables/name=cf_mysql_mysql_galera_healthcheck_endpoint_password?
+    - type: remove
+      path: /variables/name=cf_mysql_mysql_galera_healthcheck_password?
+    - type: remove
+      path: /variables/name=cf_mysql_proxy_api_password?
+    - type: remove
+      path: /variables/name=credhub_database_password?
+    - type: remove
+      path: /variables/name=pxc_server_ca?
+    - type: remove
+      path: /variables/name=mysql_server_certificate?
+    # disable policy-server jobs
+    - type: remove
+      path: /instance_groups/name=api/jobs/name=policy-server?
+    - type: remove
+      path: /instance_groups/name=api/jobs/name=policy-server-internal?
+    - type: remove
+      path: /instance_groups/name=api/jobs/name=route_registrar/properties/route_registrar/routes/name=policy-server?
+    # update external postgres properties
+    - type: replace
+      path: /instance_groups/name=diego-api/jobs/name=bbs/properties/diego/bbs/sql
+      value:
+        ca_cert: ((icd_pg.certificate))
+        db_driver: postgres
+        db_host: ((icd_pg.host))
+        db_password: ((diego_database_password))
+        db_port: ((icd_pg.port))
+        db_schema: diego
+        db_username: diego
+        require_ssl: true
+    - type: replace
+      path: /instance_groups/name=diego-api/jobs/name=locket/properties/diego/locket/sql
+      value:
+        ca_cert: ((icd_pg.certificate))
+        db_driver: postgres
+        db_host: ((icd_pg.host))
+        db_password: ((locket_database_password))
+        db_port: ((icd_pg.port))
+        db_schema: locket
+        db_username: locket
+        require_ssl: true
+    - type: replace
+      path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaa/ca_certs
+      value:
+        - ((icd_pg.certificate))
+    - type: replace
+      path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaadb
+      value:
+        ca_cert: ((icd_pg.certificate))
+        address: ((icd_pg.host))
+        databases:
+        - name: uaa
+          tag: uaa
+        db_scheme: postgres
+        port: ((icd_pg.port))
+        roles:
+        - name: uaa
+          password: ((uaa_database_password))
+          tag: admin
+        tls_enabled: true
+        # Skip ssl validation
+        skip_ssl_validation: true
+    - type: replace
+      path: /instance_groups/name=api/jobs/name=cloud_controller_ng/properties/ccdb
+      value:
+        ca_cert: ((icd_pg.certificate))
+        address: ((icd_pg.host))
+        databases:
+        - name: cloud_controller
+          tag: cc
+        db_scheme: postgres
+        port: ((icd_pg.port))
+        roles:
+        - name: cloud_controller
+          password: ((cc_database_password))
+          tag: admin
+    - type: replace
+      path: /instance_groups/name=api/jobs/name=routing-api/properties/routing_api/sqldb
+      value:
+        ca_cert: ((icd_pg.certificate))
+        host: ((icd_pg.host))
+        password: ((routing_api_database_password))
+        port: ((icd_pg.port))
+        schema: routing_api
+        type: postgres
+        username: routing_api
+    - type: replace
+      path: /instance_groups/name=cc-worker/jobs/name=cloud_controller_worker/properties/ccdb
+      value:
+        ca_cert: ((icd_pg.certificate))
+        address: ((icd_pg.host))
+        databases:
+        - name: cloud_controller
+          tag: cc
+        db_scheme: postgres
+        port: ((icd_pg.port))
+        roles:
+        - name: cloud_controller
+          password: ((cc_database_password))
+          tag: admin
+    - type: replace
+      path: /instance_groups/name=scheduler/jobs/name=cloud_controller_clock/properties/ccdb
+      value:
+        ca_cert: ((icd_pg.certificate))
+        address: ((icd_pg.host))
+        databases:
+        - name: cloud_controller
+          tag: cc
+        db_scheme: postgres
+        port: ((icd_pg.port))
+        roles:
+        - name: cloud_controller
+          password: ((cc_database_password))
+          tag: admin
+    - type: replace
+      path: /instance_groups/name=scheduler/jobs/name=cc_deployment_updater/properties/ccdb
+      value:
+        ca_cert: ((icd_pg.certificate))
+        address: ((icd_pg.host))
+        databases:
+        - name: cloud_controller
+          tag: cc
+        db_scheme: postgres
+        port: ((icd_pg.port))
+        roles:
+        - name: cloud_controller
+          password: ((cc_database_password))
+          tag: admin

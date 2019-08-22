@@ -39,3 +39,5 @@ spec:
   - name: ops-remove-diego
     type: configmap
 {{- end }}
+  - name: ops-icd
+    type: secret
