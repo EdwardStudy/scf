@@ -153,3 +153,35 @@ template = rule(
         ),
     },
 )
+
+def _template_only_impl(ctx):
+    executable = ctx.actions.declare_file(ctx.attr.name)
+    contents = """
+        set -o errexit
+        export RESOURCE="{resource}"
+    """.format(
+        resource = ctx.file.resource.short_path,
+        namespace = ctx.attr.namespace,
+    )
+    ctx.actions.write(executable, contents, is_executable = True)
+    runfiles = [
+        ctx.file.resource,
+    ]
+    return [DefaultInfo(
+        executable = executable,
+        runfiles = ctx.runfiles(files = runfiles),
+    )]
+
+template_only = rule(
+    implementation = _template_only_impl,
+    attrs = {
+        "namespace": attr.string(
+            mandatory = True,
+        ),
+        "resource": attr.label(
+            mandatory = True,
+            allow_single_file = True,
+        ),
+    },
+    executable = True,
+)
